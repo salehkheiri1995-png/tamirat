@@ -1,0 +1,1840 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سیستم مدیریت تعمیرات</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --color-white: rgba(255, 255, 255, 1);
+            --color-black: rgba(0, 0, 0, 1);
+            --color-cream-50: rgba(252, 252, 249, 1);
+            --color-cream-100: rgba(255, 255, 253, 1);
+            --color-gray-200: rgba(245, 245, 245, 1);
+            --color-gray-300: rgba(167, 169, 169, 1);
+            --color-gray-400: rgba(119, 124, 124, 1);
+            --color-slate-500: rgba(98, 108, 113, 1);
+            --color-brown-600: rgba(94, 82, 64, 1);
+            --color-charcoal-700: rgba(31, 33, 33, 1);
+            --color-charcoal-800: rgba(38, 40, 40, 1);
+            --color-slate-900: rgba(19, 52, 59, 1);
+            --color-teal-300: rgba(50, 184, 198, 1);
+            --color-teal-400: rgba(45, 166, 178, 1);
+            --color-teal-500: rgba(33, 128, 141, 1);
+            --color-teal-600: rgba(29, 116, 128, 1);
+            --color-teal-700: rgba(26, 104, 115, 1);
+            --color-red-400: rgba(255, 84, 89, 1);
+            --color-red-500: rgba(192, 21, 47, 1);
+            --color-orange-400: rgba(230, 129, 97, 1);
+            --color-orange-500: rgba(168, 75, 47, 1);
+            --color-green-500: rgba(34, 197, 94, 1);
+            --color-brown-600-rgb: 94, 82, 64;
+            --color-teal-500-rgb: 33, 128, 141;
+            --color-slate-900-rgb: 19, 52, 59;
+            --color-bg-1: rgba(59, 130, 246, 0.08);
+            --color-bg-2: rgba(245, 158, 11, 0.08);
+            --color-bg-3: rgba(34, 197, 94, 0.08);
+            --color-bg-4: rgba(239, 68, 68, 0.08);
+            --color-bg-5: rgba(147, 51, 234, 0.08);
+            --color-bg-6: rgba(249, 115, 22, 0.08);
+            --color-background: linear-gradient(135deg, #f8fdf5 0%, #fff9e6 100%);
+            --color-surface: var(--color-cream-100);
+            --color-text: var(--color-slate-900);
+            --color-text-secondary: var(--color-slate-500);
+            --color-primary: var(--color-teal-500);
+            --color-primary-hover: var(--color-teal-600);
+            --color-primary-active: var(--color-teal-700);
+            --color-secondary: rgba(var(--color-brown-600-rgb), 0.12);
+            --color-border: rgba(var(--color-brown-600-rgb), 0.2);
+            --color-btn-primary-text: var(--color-cream-50);
+            --color-success: var(--color-green-500);
+            --color-error: var(--color-red-500);
+            --color-warning: var(--color-orange-500);
+            --radius-base: 8px;
+            --radius-lg: 12px;
+            --btn-padding: 10px 20px;
+            --btn-radius: 8px;
+            --input-padding: 10px 14px;
+            --input-height: 40px;
+            --space-8: 8px;
+            --space-12: 12px;
+            --space-16: 16px;
+            --space-20: 20px;
+            --space-24: 24px;
+            --space-28: 28px;
+            --space-32: 32px;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: var(--font-family-base, "Tahoma", "Arial", sans-serif); 
+            background: linear-gradient(135deg, #f0f8f0 0%, #fff9e6 50%, #f0f9ff 100%); 
+            color: var(--color-text); 
+            line-height: 1.6; 
+            font-size: var(--font-size-base, 14px);
+        }
+        .container { max-width: 1600px; margin: 0 auto; padding: var(--space-20); }
+        .header { background: linear-gradient(135deg, var(--color-surface) 0%, #ffffff 100%); padding: var(--space-24); border-radius: var(--radius-lg); margin-bottom: var(--space-24); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); border: 1px solid rgba(94, 82, 64, 0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .header h1 { font-size: 28px; color: var(--color-text); }
+        .header-buttons { display: flex; gap: var(--space-12); flex-wrap: wrap; }
+        .tabs { display: flex; gap: var(--space-8); margin-bottom: var(--space-24); border-bottom: 2px solid var(--color-border); overflow-x: auto; }
+        .tab { padding: var(--space-12) var(--space-24); cursor: pointer; border: none; background: transparent; color: var(--color-text-secondary); font-size: 14px; font-weight: 500; border-bottom: 3px solid transparent; transition: all 250ms; white-space: nowrap; }
+        .tab:hover { color: var(--color-text); }
+        .tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .btn { 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: var(--btn-padding); 
+            border-radius: var(--btn-radius); 
+            font-size: 14px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 250ms; 
+            border: none; 
+            text-decoration: none; 
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            height: auto;
+        }
+        .btn:active { transform: translateY(1px); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
+        .btn-primary { background: var(--color-primary); color: var(--color-btn-primary-text); }
+        .btn-primary:hover { background: var(--color-primary-hover); }
+        .btn-secondary { background: var(--color-secondary); color: var(--color-text); }
+        .btn-secondary:hover { background: rgba(var(--color-brown-600-rgb), 0.2); }
+        .btn-success { background: var(--color-success); color: var(--color-white); }
+        .btn-success:hover { opacity: 0.9; }
+        .btn-danger { background: var(--color-error); color: var(--color-white); }
+        .btn-danger:hover { opacity: 0.9; }
+        .btn-warning { background: var(--color-warning); color: var(--color-white); }
+        .btn-warning:hover { opacity: 0.9; }
+        .btn-info { background: #3b82f6; color: var(--color-white); }
+        .btn-info:hover { opacity: 0.9; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .form-section { background: linear-gradient(135deg, var(--color-surface) 0%, #fefdfb 100%); padding: var(--space-28); border-radius: var(--radius-lg); border: 1px solid rgba(94, 82, 64, 0.1); margin-bottom: var(--space-24); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-16); margin-bottom: var(--space-20); }
+        .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--space-16); margin-bottom: var(--space-20); }
+        .form-group { display: flex; flex-direction: column; gap: var(--space-8); }
+        .form-group label { font-weight: 600; color: var(--color-text); font-size: 14px; margin-bottom: var(--space-4); }
+        .form-group input, .form-group select, .form-group textarea { 
+            padding: var(--input-padding); 
+            border: 1.5px solid var(--color-border); 
+            border-radius: var(--radius-base); 
+            background-color: var(--color-background); 
+            color: var(--color-text); 
+            font-size: var(--font-size-base, 14px); 
+            font-family: var(--font-family-base, "Tahoma", "Arial", sans-serif); 
+            transition: all 200ms;
+            height: var(--input-height);
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--color-primary); outline: none; box-shadow: 0 0 0 3px rgba(33, 128, 141, 0.1); }
+        .form-group textarea { min-height: 100px; resize: vertical; height: auto; }
+        .form-actions { display: flex; gap: var(--space-12); flex-wrap: wrap; }
+        .table-container { background: linear-gradient(135deg, var(--color-surface) 0%, #fefdfb 100%); padding: var(--space-24); border-radius: var(--radius-lg); border: 1px solid rgba(94, 82, 64, 0.1); overflow-x: auto; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        table th { background-color: var(--color-primary); padding: var(--space-12); text-align: right; font-weight: 700; color: var(--color-btn-primary-text); border-bottom: 3px solid var(--color-primary-hover); cursor: pointer; user-select: none; font-size: 14px; }
+        table td { padding: var(--space-12); border-bottom: 1px solid var(--color-border); text-align: right; font-size: 13px; }
+        table tr:hover { background-color: rgba(33, 128, 141, 0.08); }
+        .action-buttons { display: flex; gap: var(--space-8); flex-wrap: wrap; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto; }
+        .modal.active { display: flex; }
+        .modal-content { background: linear-gradient(135deg, var(--color-surface) 0%, #fefdfb 100%); padding: var(--space-32); border-radius: var(--radius-lg); max-width: 900px; width: 90%; margin: var(--space-20) auto; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; }
+        .modal-content form { overflow-y: auto; flex: 1; padding-right: var(--space-8); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-24); }
+        .modal-header h2 { font-size: 20px; color: var(--color-text); }
+        .close-modal { font-size: 28px; background: none; border: none; cursor: pointer; color: var(--color-text); }
+        .modal-footer { display: flex; justify-content: flex-end; gap: var(--space-12); margin-top: var(--space-24); flex-wrap: wrap; border-top: 1px solid var(--color-border); padding-top: var(--space-20); }
+        .modal-footer button { min-width: 140px; flex-shrink: 0; }
+        .search-box { padding: var(--space-12) var(--space-16); border: 1px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-background); color: var(--color-text); font-size: 14px; width: 100%; max-width: 600px; margin-bottom: var(--space-16); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-16); margin-bottom: var(--space-24); }
+        .stat-card { background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%); padding: var(--space-24); border-radius: var(--radius-lg); border: 2px solid var(--color-success); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.1); }
+        .stat-card h3 { font-size: 13px; color: var(--color-text-secondary); margin-bottom: var(--space-12); font-weight: 600; }
+        .stat-card .value { font-size: 36px; font-weight: 700; color: var(--color-primary); }
+        .message { padding: var(--space-16); border-radius: var(--radius-lg); margin-bottom: var(--space-16); font-size: 14px; font-weight: 500; box-shadow: var(--shadow-sm); animation: slideIn 300ms ease-out; }
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .message.success { background-color: rgba(34, 197, 94, 0.15); color: var(--color-success); border: 2px solid var(--color-success); }
+        .message.error { background-color: rgba(192, 21, 47, 0.15); color: var(--color-error); border: 2px solid var(--color-error); }
+        .message.warning { background-color: rgba(230, 129, 97, 0.15); color: var(--color-warning); border: 2px solid var(--color-warning); }
+        .suggestion-item { padding: var(--space-12) var(--space-14); cursor: pointer; border-bottom: 1px solid var(--color-border); font-size: 13px; text-align: right; transition: all 150ms; }
+        .suggestion-item:hover { background-color: var(--color-primary); color: var(--color-btn-primary-text); }
+        .status-indicator { display: inline-block; padding: var(--space-4) var(--space-8); border-radius: var(--radius-base); font-size: 12px; font-weight: 500; }
+        .status-indicator.online { background-color: rgba(34, 197, 94, 0.2); color: var(--color-success); }
+        .status-indicator.offline { background-color: rgba(192, 21, 47, 0.2); color: var(--color-error); }
+        .settings-section { background: #f9fafb; padding: var(--space-20); border-radius: var(--radius-lg); margin-bottom: var(--space-20); border: 1px solid var(--color-border); }
+        .settings-section h3 { margin-bottom: var(--space-16); color: var(--color-text); font-size: 16px; }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: var(--space-16); }
+            .header-buttons { width: 100%; flex-direction: column; }
+            .form-grid { grid-template-columns: 1fr; }
+            .search-box { max-width: 100%; }
+            table { font-size: 11px; }
+            table th, table td { padding: var(--space-6); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>🔧 سیستم مدیریت تعمیرات</h1>
+                <small style="color: var(--color-text-secondary);">خودکار ذخیره‌سازی و مدیریت داده‌ها</small>
+            </div>
+            <div class="header-buttons">
+                <span id="syncStatus" class="status-indicator online">✅ آماده</span>
+                <button class="btn btn-primary btn-sm" onclick="testDataStorage()">🔍 تست</button>
+                <button class="btn btn-warning btn-sm" onclick="downloadBackup()">💾 دانلود</button>
+                <button class="btn btn-info btn-sm" onclick="uploadBackup()">📥 بارگذاری</button>
+                <button class="btn btn-success btn-sm" onclick="exportToExcel()">📊 اکسل</button>
+                <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑️ پاک‌کردن</button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('add')">➕ ثبت رکورد جدید</button>
+            <button class="tab" onclick="switchTab('data')">📋 نمایش داده‌ها</button>
+            <button class="tab" onclick="switchTab('import')">📥 بارگذاری اکسل</button>
+            <button class="tab" onclick="switchTab('settings')">⚙️ تنظیمات</button>
+        </div>
+
+        <div id="addTab" class="tab-content active">
+            <div class="form-section">
+                <h2 style="margin-bottom: var(--space-16); font-size: 18px;">ثبت رکورد جدید</h2>
+                <div id="addMessage"></div>
+                <form id="addForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>🌡️ نوع برنامه *</label>
+                            <select id="addType" required>
+                                <option value="">انتخاب کنید</option>
+                                <option value="سرد">سرد</option>
+                                <option value="گرم">گرم</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>🔢 کد</label>
+                            <input type="number" id="addCode" placeholder="مثال: 1">
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>📍 نام خط *</label>
+                            <div style="position: relative;">
+                                <input type="text" id="addLineName" required placeholder="جستجو یا انتخاب نام خط..." oninput="showSuggestions('addLineName', 'lineNameSuggestions', lineNamesList)" style="width: 100%; padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-background); color: var(--color-text); font-size: var(--font-size-base, 14px); font-family: var(--font-family-base, 'Tahoma', 'Arial', sans-serif); height: var(--input-height);">
+                                <div id="lineNameSuggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-base); max-height: 300px; overflow-y: auto; display: none; z-index: 100; box-shadow: var(--shadow-md);"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>⚡ سطح ولتاژ *</label>
+                            <select id="addVoltage" required>
+                                <option value="">انتخاب کنید</option>
+                                <option value="63">63 کیلوولت</option>
+                                <option value="110">110 کیلوولت</option>
+                                <option value="132">132 کیلوولت</option>
+                                <option value="230">230 کیلوولت</option>
+                                <option value="400">400 کیلوولت</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>📄 شرح انجام کار *</label>
+                            <div style="position: relative;">
+                                <textarea id="addDescription" required placeholder="جستجو یا انتخاب شرح کار..." oninput="showSuggestions('addDescription', 'descriptionSuggestions', descriptionList)" style="width: 100%; padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-background); color: var(--color-text); font-size: var(--font-size-base, 14px); font-family: var(--font-family-base, 'Tahoma', 'Arial', sans-serif); min-height: 100px;"></textarea>
+                                <div id="descriptionSuggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-base); max-height: 300px; overflow-y: auto; display: none; z-index: 100; box-shadow: var(--shadow-md);"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>🗻 موقعیت *</label>
+                            <select id="addLocation" required>
+                                <option value="">انتخاب کنید</option>
+                                <option value="کوهستان">کوهستان</option>
+                                <option value="دشت">دشت</option>
+                                <option value="شهری">شهری</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>🏗️ شماره دکل *</label>
+                            <input type="text" id="addTowerNumber" required placeholder="مثال: 2">
+                        </div>
+                        <div class="form-group">
+                            <label>📅 تاریخ ثبت گزارش</label>
+                            <div style="display: flex; gap: var(--space-8); align-items: center;">
+                                <input type="text" id="addPMDate" placeholder="مثال: 1403/12/06" style="flex: 1; padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-background); color: var(--color-text); font-size: 14px; height: var(--input-height); text-align: center; direction: ltr;">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="setTodayPMDate()" style="white-space: nowrap;">📅 امروز</button>
+                            </div>
+                            <small style="color: var(--color-text-secondary); font-size: 12px; margin-top: var(--space-8); display: block;">تاریخ امروز: <span id="todayPMDateDisplay"></span></small>
+                        </div>
+                        <div class="form-group">
+                            <label>📅 تاریخ انجام *</label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-8);">
+                                <select id="addDateYear" required>
+                                    <option value="">سال</option>
+                                </select>
+                                <select id="addDateMonth" required>
+                                    <option value="">ماه</option>
+                                </select>
+                                <select id="addDateDay" required>
+                                    <option value="">روز</option>
+                                </select>
+                            </div>
+                            <small style="color: var(--color-text-secondary); font-size: 12px; margin-top: var(--space-8); display: block;">تاریخ امروز: <span id="todayDateDisplay"></span></small>
+                        </div>
+                        <div class="form-group">
+                            <label>👥 تعداد اکیپ</label>
+                            <select id="addTeams">
+                                <option value="">انتخاب کنید</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>👨 تعداد نفرات</label>
+                            <select id="addWorkers">
+                                <option value="">انتخاب کنید</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>👔 نام سرپرست اکیپ</label>
+                            <select id="addSupervisor">
+                                <option value="">انتخاب کنید</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>📏 واحد</label>
+                            <select id="addUnit" required>
+                                <option value="">انتخاب کنید</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>📊 مقدار</label>
+                            <input type="number" id="addQuantity" step="0.1" placeholder="مقدار کار">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">✅ ثبت رکورد</button>
+                        <button type="reset" class="btn btn-secondary">🔄 پاک کردن فرم</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="dataTab" class="tab-content">
+            <div class="tabs" style="margin-bottom: var(--space-16); border-bottom: none;">
+                <button class="tab active" onclick="switchDataView('manual')" style="margin-bottom: 0;">➕ ثبت شده دستی</button>
+                <button class="tab" onclick="switchDataView('imported')" style="margin-bottom: 0;">📥 بارگذاری شده</button>
+            </div>
+            <div class="form-section" style="padding: var(--space-16);">
+                <input type="text" class="search-box" id="searchBox" placeholder="🔍 جستجو در جدول...">
+                <div style="display: flex; gap: var(--space-12); margin-top: var(--space-12); flex-wrap: wrap;">
+                    <button class="btn btn-success btn-sm" onclick="exportManualToExcel()">➕ دانلود ثبت شده</button>
+                    <button class="btn btn-success btn-sm" onclick="exportImportedToExcel()">📥 دانلود بارگذاری شده</button>
+                </div>
+            </div>
+            <div class="stats-grid" id="statsContainer"></div>
+            <div class="table-container">
+                <table id="dataTable">
+                    <thead id="tableHead"></thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="importTab" class="tab-content">
+            <div class="form-section">
+                <h2 style="margin-bottom: var(--space-16); font-size: 18px;">بارگذاری فایل اکسل</h2>
+                <div id="importMessage"></div>
+                <div style="border: 2px dashed var(--color-border); border-radius: var(--radius-lg); padding: var(--space-32); text-align: center; cursor: pointer;" id="uploadArea">
+                    <p style="margin-bottom: var(--space-16); color: var(--color-text-secondary);">فایل را اینجا رها کنید یا کلیک کنید</p>
+                    <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">📂 انتخاب فایل اکسل</button>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
+                </div>
+            </div>
+        </div>
+
+        <div id="settingsTab" class="tab-content">
+            <div class="form-section">
+                <h2 style="margin-bottom: var(--space-24); font-size: 18px;">⚙️ تنظیمات ظاهری پیشرفته</h2>
+                <div id="settingsMessage"></div>
+                
+                <div class="settings-section">
+                    <h3>🖼️ تصاویر و هدر</h3>
+                    <div class="settings-grid">
+                        <div class="form-group">
+                            <label>آپلود تصویر هدر</label>
+                            <input type="file" id="headerImage" accept="image/*" onchange="previewImage('headerImage', 'headerImagePreview')">
+                            <div id="headerImagePreview" style="margin-top: var(--space-12); height: 100px; border-radius: var(--radius-base); overflow: hidden; background: var(--color-bg-3); display: none;">
+                                <img id="headerImagePreviewImg" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>ارتفاع هدر (px)</label>
+                            <input type="range" id="headerHeight" min="60" max="200" value="100" oninput="applySettings()" style="height: 6px;">
+                            <span id="headerHeightDisplay" style="font-size: 12px; color: var(--color-text-secondary);">100px</span>
+                        </div>
+                        <div class="form-group">
+                            <label>موضع تصویر هدر</label>
+                            <select id="headerImagePosition" onchange="applySettings()">
+                                <option value="center">وسط</option>
+                                <option value="top">بالا</option>
+                                <option value="bottom">پایین</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>شفافیت هدر</label>
+                            <input type="range" id="headerOpacity" min="0" max="100" value="100" oninput="applySettings()" style="height: 6px;">
+                            <span id="headerOpacityDisplay" style="font-size: 12px; color: var(--color-text-secondary);">100%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>📍 موقعیت‌بندی عناصر</h3>
+                    <div class="settings-grid">
+                        <div class="form-group">
+                            <label>جهت دکمه‌های هدر</label>
+                            <select id="headerButtonsLayout" onchange="applySettings()">
+                                <option value="flex">افقی</option>
+                                <option value="flex-col">عمودی</option>
+                                <option value="flex-wrap">پیچیده‌ای</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>موضع Tabs</label>
+                            <select id="tabsPosition" onchange="applySettings()">
+                                <option value="top">بالا</option>
+                                <option value="bottom">پایین</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>عرض فرم‌ها (px)</label>
+                            <input type="range" id="containerWidth" min="800" max="1800" value="1600" oninput="applySettings()" style="height: 6px;">
+                            <span id="containerWidthDisplay" style="font-size: 12px; color: var(--color-text-secondary);">1600px</span>
+                        </div>
+                        <div class="form-group">
+                            <label>تعداد ستون‌های فرم</label>
+                            <select id="formColumns" onchange="applySettings()">
+                                <option value="1">1 ستون</option>
+                                <option value="2">2 ستون</option>
+                                <option value="3">3 ستون</option>
+                                <option value="auto" selected>خودکار</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>🎨 تنظیمات متن سراسری</h3>
+                    <p style="font-size: 12px; color: var(--color-text-secondary); margin-bottom: var(--space-12);">💡 راهنما: هر متنی که دوست دارید تغییر دهید، روی آن دوبار کلیک کنید!</p>
+                    <div class="settings-grid">
+                        <div class="form-group">
+                            <label>🏷️ عنوان اصلی (هدر)</label>
+                            <input type="text" id="headerTitle" value="🔧 سیستم مدیریت تعمیرات" onchange="applyTextSettings()">
+                        </div>
+                        <div class="form-group">
+                            <label>📝 توضیح هدر</label>
+                            <input type="text" id="headerSubtitle" value="خودکار ذخیره‌سازی و مدیریت داده‌ها" onchange="applyTextSettings()">
+                        </div>
+                        <div class="form-group">
+                            <label>فونت اصلی</label>
+                            <select id="fontFamily" onchange="applySettings()">
+                                <option value="Tahoma, Arial, sans-serif">تاهما (پیش‌فرض)</option>
+                                <option value="Arial, sans-serif">Arial</option>
+                                <option value="Verdana, sans-serif">Verdana</option>
+                                <option value="Georgia, serif">Georgia</option>
+                                <option value="Courier New, monospace">Courier</option>
+                                <option value="Comic Sans MS, cursive">Comic Sans</option>
+                                <option value="'B Nazanin', serif">'B Nazanin' (فارسی)</option>
+                                <option value="'Lotus'">Lotus (فارسی)</option>
+                                <option value="System-ui, sans-serif">System UI</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>اندازه فونت (px)</label>
+                            <input type="range" id="fontSize" min="10" max="24" value="14" oninput="applySettings()" style="height: 6px;">
+                            <span id="fontSizeDisplay" style="font-size: 12px; color: var(--color-text-secondary);">14px</span>
+                        </div>
+                        <div class="form-group">
+                            <label>وزن فونت</label>
+                            <select id="fontWeight" onchange="applySettings()">
+                                <option value="400">معمولی (400)</option>
+                                <option value="500">نیمه‌ضخیم (500)</option>
+                                <option value="600">ضخیم (600)</option>
+                                <option value="700">خیلی ضخیم (700)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>🎨 رنگ‌ها</h3>
+                    <div class="settings-grid">
+                        <div class="form-group">
+                            <label>رنگ متن</label>
+                            <div style="display: flex; align-items: center; gap: var(--space-12);">
+                                <input type="color" id="textColor" value="#134252" onchange="applySettings()" style="width: 50px; height: 40px; cursor: pointer;">
+                                <input type="text" id="textColorHex" value="#134252" style="flex: 1;" readonly>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>رنگ اصلی (Primary)</label>
+                            <div style="display: flex; align-items: center; gap: var(--space-12);">
+                                <input type="color" id="primaryColor" value="#218089" onchange="applySettings()" style="width: 50px; height: 40px; cursor: pointer;">
+                                <input type="text" id="primaryColorHex" value="#218089" style="flex: 1;" readonly>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>رنگ موفقیت</label>
+                            <div style="display: flex; align-items: center; gap: var(--space-12);">
+                                <input type="color" id="successColor" value="#22c55e" onchange="applySettings()" style="width: 50px; height: 40px; cursor: pointer;">
+                                <input type="text" id="successColorHex" value="#22c55e" style="flex: 1;" readonly>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>رنگ خطا</label>
+                            <div style="display: flex; align-items: center; gap: var(--space-12);">
+                                <input type="color" id="errorColor" value="#c0152f" onchange="applySettings()" style="width: 50px; height: 40px; cursor: pointer;">
+                                <input type="text" id="errorColorHex" value="#c0152f" style="flex: 1;" readonly>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>رنگ هشدار</label>
+                            <div style="display: flex; align-items: center; gap: var(--space-12);">
+                                <input type="color" id="warningColor" value="#a84b2f" onchange="applySettings()" style="width: 50px; height: 40px; cursor: pointer;">
+                                <input type="text" id="warningColorHex" value="#a84b2f" style="flex: 1;" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>🎨 پس‌زمینه</h3>
+                    <div class="settings-grid">
+                        <div class="form-group">
+                            <label>رنگ شروع</label>
+                            <input type="color" id="bgColorStart" value="#f0f8f0" onchange="applySettings()" style="width: 100%; height: 40px; cursor: pointer;">
+                        </div>
+                        <div class="form-group">
+                            <label>رنگ میانه</label>
+                            <input type="color" id="bgColorMid" value="#fff9e6" onchange="applySettings()" style="width: 100%; height: 40px; cursor: pointer;">
+                        </div>
+                        <div class="form-group">
+                            <label>رنگ پایان</label>
+                            <input type="color" id="bgColorEnd" value="#f0f9ff" onchange="applySettings()" style="width: 100%; height: 40px; cursor: pointer;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>📏 ابعاد و فاصله‌ها</h3>
+                    <div class="settings-grid">
+                        <div class="form-group">
+                            <label>شعاع گوشه‌ها (px)</label>
+                            <input type="range" id="borderRadius" min="0" max="20" value="8" oninput="applySettings()" style="height: 6px;">
+                            <span id="borderRadiusDisplay" style="font-size: 12px; color: var(--color-text-secondary);">8px</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Padding دکمه‌ها</label>
+                            <select id="btnPadding" onchange="applySettings()">
+                                <option value="compact">فشرفته (6px 12px)</option>
+                                <option value="normal" selected>عادی (10px 20px)</option>
+                                <option value="spacious">گسترده (14px 28px)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>اندازه Input</label>
+                            <select id="inputSize" onchange="applySettings()">
+                                <option value="compact">کوچک (36px)</option>
+                                <option value="normal" selected>عادی (40px)</option>
+                                <option value="large">بزرگ (48px)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>فاصله‌های داخلی</label>
+                            <select id="spacing" onchange="applySettings()">
+                                <option value="compact">فشرفته</option>
+                                <option value="normal">عادی</option>
+                                <option value="spacious">گسترده</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Radius دکمه‌ها (px)</label>
+                            <input type="range" id="btnRadius" min="0" max="20" value="8" oninput="applySettings()" style="height: 6px;">
+                            <span id="btnRadiusDisplay" style="font-size: 12px; color: var(--color-text-secondary);">8px</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: var(--space-12); margin-top: var(--space-24); flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="saveSettings()">💾 ذخیره تنظیمات</button>
+                    <button class="btn btn-secondary" onclick="resetSettings()">🔄 بازگرداندن پیش‌فرض</button>
+                    <button class="btn btn-warning" onclick="exportSettings()">📥 دانلود تنظیمات</button>
+                    <button class="btn btn-info" onclick="importSettingsFile()">📤 بارگذاری تنظیمات</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✏️ ویرایش رکورد</h2>
+                <button class="close-modal" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-16);"></form>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">❌ انصراف</button>
+                <button type="button" class="btn btn-primary" onclick="saveEdit()">✅ ذخیره</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let importedData = [];
+        let manualData = [];
+        let currentDataView = 'manual';
+        let editingIndex = -1;
+        let searchQuery = '';
+        let lineNamesList = [];
+        let descriptionList = [];
+        let supervisorList = [];
+        let unitsList = [];
+
+        const fields = [
+            { id: 'type', label: 'نوع برنامه', required: true },
+            { id: 'code', label: 'کد' },
+            { id: 'lineName', label: 'نام خط', required: true },
+            { id: 'voltage', label: 'سطح ولتاژ', required: true },
+            { id: 'description', label: 'شرح انجام کار', required: true },
+            { id: 'towerNumber', label: 'شماره دکل', required: true },
+            { id: 'location', label: 'موقعیت', required: true },
+            { id: 'pmDate', label: 'تاریخ ثبت گزارش' },
+            { id: 'date', label: 'تاریخ انجام', required: true },
+            { id: 'teams', label: 'تعداد اکیپ' },
+            { id: 'workers', label: 'تعداد نفرات' },                    { id: 'supervisor', label: 'نام سرپرست اکیپ' },
+                    { id: 'quantity', label: 'مقدار' },
+                    { id: 'unit', label: 'واحد' }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            openIndexedDB().then(() => {
+                populateDateSelects();
+                setDefaultDate();
+                loadDataFromLocalStorage();
+                loadSettings();
+                setupStorageSync();
+                setupUploadArea();
+                updateTableHeader();
+                switchTab('add');
+                updateDataDisplay();
+            });
+        });
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tabs .tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            if (event && event.target) event.target.classList.add('active');
+            if (tabName === 'data') updateDataDisplay();
+        }
+
+        function switchDataView(view) {
+            currentDataView = view;
+            document.querySelectorAll('#dataTab .tabs .tab').forEach(tab => tab.classList.remove('active'));
+            if (event && event.target) event.target.classList.add('active');
+            updateTableHeader();
+            updateDataDisplay();
+        }
+
+        document.addEventListener('click', (e) => {
+            const clickedInput = e.target.closest('input[id*="add"], textarea[id*="add"]');
+            const clickedSuggestions = e.target.closest('[id*="Suggestions"]');
+            if (!clickedInput && !clickedSuggestions) {
+                document.getElementById('lineNameSuggestions').style.display = 'none';
+                document.getElementById('descriptionSuggestions').style.display = 'none';
+                document.getElementById('supervisorSuggestions').style.display = 'none';
+            }
+        });
+
+        function populateDateSelects() {
+            const yearSelect = document.getElementById('addDateYear');
+            const monthSelect = document.getElementById('addDateMonth');
+            const daySelect = document.getElementById('addDateDay');
+            
+            // پاک کردن گزینه‌های قدیمی (اگر موجود باشند)
+            yearSelect.innerHTML = '<option value="">سال</option>';
+            monthSelect.innerHTML = '<option value="">ماه</option>';
+            daySelect.innerHTML = '<option value="">روز</option>';
+            
+            for (let i = 1400; i <= 1410; i++) {
+                const yearOption = document.createElement('option');
+                yearOption.value = i;
+                yearOption.textContent = i;
+                yearSelect.appendChild(yearOption);
+            }
+            
+            const months = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+            months.forEach((month, idx) => {
+                const option = document.createElement('option');
+                option.value = idx + 1;
+                option.textContent = (idx + 1).toString().padStart(2, '0') + ' - ' + month;
+                monthSelect.appendChild(option);
+            });
+            
+            for (let i = 1; i <= 31; i++) {
+                const dayOption = document.createElement('option');
+                dayOption.value = i;
+                dayOption.textContent = i.toString().padStart(2, '0');
+                daySelect.appendChild(dayOption);
+            }
+        }
+        
+        function setDefaultDate() {
+            const today = new Date();
+            const persianDate = today.toLocaleDateString('fa-IR');
+            const parts = persianDate.split('/');
+            
+            // تبدیل صحیح تاریخ میلادی به شمسی
+            let year, month, day;
+            
+            if (parts[0].length === 4) {
+                // فرمت YYYY/MM/DD
+                year = parseInt(parts[0]);
+                month = parseInt(parts[1]);
+                day = parseInt(parts[2]);
+            } else if (parts[2].length === 4) {
+                // فرمت DD/MM/YYYY
+                year = parseInt(parts[2]);
+                month = parseInt(parts[1]);
+                day = parseInt(parts[0]);
+            } else {
+                year = 1403;
+                month = 12;
+                day = 6;
+            }
+            
+            // تنظیم dropdown تاریخ انجام
+            document.getElementById('addDateYear').value = year;
+            document.getElementById('addDateMonth').value = month;
+            document.getElementById('addDateDay').value = day;
+            document.getElementById('todayDateDisplay').textContent = `${year}/${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}`;
+            
+            // تاریخ ثبت گزارش (تاریخ PM) - پیش‌فرض تاریخ امروز
+            setTodayPMDate();
+        }
+
+        function setTodayPMDate() {
+            const today = new Date();
+            const persianDate = today.toLocaleDateString('fa-IR');
+            const parts = persianDate.split('/');
+            
+            const year = parts[0].length === 4 ? parts[0] : (1400 + parseInt(parts[0]));
+            const month = String(parts[1]).padStart(2, '0');
+            const day = String(parts[2]).padStart(2, '0');
+            
+            const formattedDate = `${year}/${month}/${day}`;
+            document.getElementById('addPMDate').value = formattedDate;
+            document.getElementById('todayPMDateDisplay').textContent = formattedDate;
+            
+            return false;
+        }
+
+        function formatDate(year, month, day) {
+            if (!year || !month || !day) return '';
+            return `${year}/${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}`;
+        }
+
+        function loadDataFromLocalStorage() {
+            // ابتدا از IndexedDB سعی می‌کنیم
+            openIndexedDB().then(() => {
+                getAllData().then(data => {
+                    if (data && data.length > 0) {
+                        importedData = data.filter(d => d.source === 'imported').map(d => d.record);
+                        manualData = data.filter(d => d.source === 'manual').map(d => d.record);
+                        buildSuggestionLists();
+                        return;
+                    }
+                    
+                    // اگر IndexedDB خالی بود، از localStorage بارگذاری کنید
+                    const savedData = localStorage.getItem('maintenanceData');
+                    if (savedData) {
+                        try {
+                            const jsonData = JSON.parse(savedData);
+                            importedData = jsonData.importedData || [];
+                            manualData = jsonData.manualData || [];
+                            
+                            // اطلاعات را به IndexedDB منتقل کنید
+                            saveAllData();
+                        } catch (error) {
+                            console.log('خطا در بارگذاری:', error);
+                            importedData = [];
+                            manualData = [];
+                        }
+                    }
+                    buildSuggestionLists();
+                });
+            });
+        }
+
+        function setupStorageSync() {
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'maintenanceData') {
+                    console.log('📡 داده‌ها از تب دیگر بروزرسانی شد!');
+                    loadDataFromLocalStorage();
+                    updateTableHeader();
+                    updateDataDisplay();
+                    showMessage('addMessage', '📡 داده‌ها بروزرسانی شدند!', 'success');
+                }
+            });
+        }
+
+        let db;
+
+        function openIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('MaintenanceDB', 1);
+                
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const newDb = event.target.result;
+                    if (!newDb.objectStoreNames.contains('records')) {
+                        newDb.createObjectStore('records', { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+            });
+        }
+
+        function saveAllData() {
+            if (!db) return Promise.reject('Database not initialized');
+            
+            return openIndexedDB().then(() => {
+                const transaction = db.transaction(['records'], 'readwrite');
+                const store = transaction.objectStore('records');
+                
+                // پاک کردن داده های قدیمی
+                store.clear();
+                
+                // ذخیره سازی داده های جدید
+                manualData.forEach(record => {
+                    store.add({
+                        record: record,
+                        source: 'manual',
+                        timestamp: new Date().toISOString()
+                    });
+                });
+                
+                importedData.forEach(record => {
+                    store.add({
+                        record: record,
+                        source: 'imported',
+                        timestamp: new Date().toISOString()
+                    });
+                });
+                
+                return new Promise((resolve) => {
+                    transaction.oncomplete = () => {
+                        // همچنین در localStorage ذخیره کنید (نسخه پشتیبان)
+                        const dataToSave = {
+                            importedData: importedData,
+                            manualData: manualData,
+                            lastSaved: new Date().toLocaleString('fa-IR')
+                        };
+                        localStorage.setItem('maintenanceData', JSON.stringify(dataToSave));
+                        
+                        console.log('✅ ذخیره شد در IndexedDB و localStorage');
+                        window.dispatchEvent(new Event('maintenanceDataChanged'));
+                        resolve();
+                    };
+                });
+            });
+        }
+
+        function getAllData() {
+            if (!db) return Promise.resolve([]);
+            
+            return new Promise((resolve) => {
+                const transaction = db.transaction(['records'], 'readonly');
+                const store = transaction.objectStore('records');
+                const request = store.getAll();
+                
+                request.onsuccess = () => {
+                    resolve(request.result);
+                };
+                
+                request.onerror = () => {
+                    resolve([]);
+                };
+            });
+        }
+
+        function saveDataToLocalStorage() {
+            saveAllData();
+        }
+
+        function buildSuggestionLists() {
+            const lineNames = new Map();
+            const descriptions = new Map();
+            const supervisors = new Map();
+            const units = new Map();
+            let lineIndex = 1;
+            let descIndex = 1;
+            let supIndex = 1;
+            let unitIndex = 1;
+            
+            [...importedData, ...manualData].forEach(record => {
+                if (record.lineName && !lineNames.has(record.lineName)) {
+                    lineNames.set(record.lineName, {
+                        id: lineIndex,
+                        name: record.lineName,
+                        display: `${lineIndex}. ${record.lineName}`
+                    });
+                    lineIndex++;
+                }
+                if (record.description && !descriptions.has(record.description)) {
+                    descriptions.set(record.description, {
+                        id: descIndex,
+                        name: record.description,
+                        display: `${descIndex}. ${record.description}`
+                    });
+                    descIndex++;
+                }
+                if (record.supervisor && !supervisors.has(record.supervisor)) {
+                    supervisors.set(record.supervisor, {
+                        id: supIndex,
+                        name: record.supervisor,
+                        display: `${supIndex}. ${record.supervisor}`
+                    });
+                    supIndex++;
+                }
+                if (record.unit && !units.has(record.unit)) {
+                    units.set(record.unit, {
+                        id: unitIndex,
+                        name: record.unit,
+                        display: record.unit
+                    });
+                    unitIndex++;
+                }
+            });
+            
+            lineNamesList = Array.from(lineNames.values());
+            descriptionList = Array.from(descriptions.values());
+            supervisorList = Array.from(supervisors.values());
+            unitsList = Array.from(units.values());
+            
+            // بروزرسانی دراپ‌داون‌ها
+            updateSupervisorDropdown();
+            updateUnitsDropdown();
+        }
+
+        function updateSupervisorDropdown() {
+            const select = document.getElementById('addSupervisor');
+            if (!select) return;
+            
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            supervisorList.forEach(supervisor => {
+                const option = document.createElement('option');
+                option.value = supervisor.name;
+                option.textContent = supervisor.display;
+                select.appendChild(option);
+            });
+            
+            select.value = currentValue;
+        }
+
+        function updateUnitsDropdown() {
+            const select = document.getElementById('addUnit');
+            if (!select) return;
+            
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            unitsList.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit.name;
+                option.textContent = unit.display;
+                select.appendChild(option);
+            });
+            
+            select.value = currentValue;
+        }
+
+        function showSuggestions(inputId, suggestionsId, list) {
+            const input = document.getElementById(inputId);
+            const suggestionsDiv = document.getElementById(suggestionsId);
+            const query = input.value.trim().toLowerCase();
+            
+            if (!query) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            
+            const filtered = list.filter(item => 
+                item.name.toLowerCase().includes(query) || 
+                item.display.toLowerCase().includes(query) || 
+                item.id.toString() === query
+            );
+            
+            if (filtered.length === 0) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            
+            const displayItems = filtered.slice(0, 15);
+            suggestionsDiv.innerHTML = displayItems.map(item => `
+                <div class="suggestion-item" onclick="selectSuggestion('${inputId}', '${item.name.replace(/'/g, "\\'")}')">${item.display}</div>
+            `).join('');
+            
+            suggestionsDiv.style.display = 'block';
+        }
+
+        function selectSuggestion(inputId, value) {
+            document.getElementById(inputId).value = value;
+            const suggestionsId = inputId === 'addLineName' ? 'lineNameSuggestions' : (inputId === 'addDescription' ? 'descriptionSuggestions' : 'supervisorSuggestions');
+            if (document.getElementById(suggestionsId)) {
+                document.getElementById(suggestionsId).style.display = 'none';
+            }
+        }
+
+        function showMessage(containerId, message, type = 'success') {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '<div class="message ' + type + '">' + message + '</div>';
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 4000);
+        }
+
+        document.getElementById('addForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const date = formatDate(
+                document.getElementById('addDateYear').value,
+                document.getElementById('addDateMonth').value,
+                document.getElementById('addDateDay').value
+            );
+
+            const pmDate = document.getElementById('addPMDate').value || date;
+
+            if (!date) {
+                showMessage('addMessage', '⚠️ لطفاً تاریخ انجام را انتخاب کنید!', 'error');
+                return;
+            }
+
+            if (!document.getElementById('addType').value) {
+                showMessage('addMessage', '⚠️ لطفاً نوع برنامه را انتخاب کنید!', 'error');
+                return;
+            }
+
+            const newRecord = {
+                type: document.getElementById('addType').value,
+                code: document.getElementById('addCode').value,
+                lineName: document.getElementById('addLineName').value,
+                voltage: document.getElementById('addVoltage').value,
+                description: document.getElementById('addDescription').value,
+                towerNumber: document.getElementById('addTowerNumber').value,
+                location: document.getElementById('addLocation').value,
+                pmDate: pmDate,
+                date: date,
+                teams: document.getElementById('addTeams').value || '',
+                workers: document.getElementById('addWorkers').value || '',
+                supervisor: document.getElementById('addSupervisor').value,
+                quantity: document.getElementById('addQuantity').value || '',
+                unit: document.getElementById('addUnit').value
+            };
+
+            // بررسی تکراری بودن رکورد
+            const isDuplicate = [...manualData, ...importedData].some(record => 
+                JSON.stringify(record) === JSON.stringify(newRecord)
+            );
+
+            if (isDuplicate) {
+                const confirmSave = confirm('⚠️ همچین اطلاعاتی درون دیتابیس موجود است!\n\nآیا می‌خواهید دوباره این رکورد را ذخیره کنید?\n\n✅ بلی = ذخیره دوباره\n❌ خیر = ویرایش یا لغو');
+                
+                if (!confirmSave) {
+                    showMessage('addMessage', '❌ رکورد تکراری است. لطفاً رکورد را ویرایش کنید یا تغییر دهید.', 'error');
+                    return;
+                }
+            }
+
+            manualData.push(newRecord);
+            saveDataToLocalStorage();
+            buildSuggestionLists();
+            updateDataDisplay();
+            
+            showMessage('addMessage', '✅ رکورد ثبت و ذخیره شد!');
+            showSuccessPopup();
+            
+            // هیچ فیلدی پاک نمی‌شود - همه چیز ثابت می‌مانند
+        });
+
+        function showSuccessPopup() {
+            const popup = document.createElement('div');
+            popup.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: linear-gradient(135deg, var(--color-success) 0%, var(--color-primary) 100%);
+                color: white;
+                padding: 30px 40px;
+                border-radius: var(--radius-lg);
+                box-shadow: 0 10px 40px rgba(34, 197, 94, 0.3);
+                z-index: 2000;
+                text-align: center;
+                animation: popupSlideIn 300ms ease-out;
+                font-size: 18px;
+                font-weight: 600;
+                border: 2px solid white;
+            `;
+            popup.innerHTML = '✅ رکورد با موفقیت ثبت شد!';
+            document.body.appendChild(popup);
+            
+            setTimeout(() => {
+                popup.style.animation = 'popupSlideOut 300ms ease-out';
+                setTimeout(() => {
+                    document.body.removeChild(popup);
+                }, 300);
+            }, 2000);
+        }
+
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes popupSlideIn {
+                from {
+                    opacity: 0;
+                    transform: translate(-50%, -60%);
+                }
+                to {
+                    opacity: 1;
+                    transform: translate(-50%, -50%);
+                }
+            }
+            
+            @keyframes popupSlideOut {
+                from {
+                    opacity: 1;
+                    transform: translate(-50%, -50%);
+                }
+                to {
+                    opacity: 0;
+                    transform: translate(-50%, -40%);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        function updateTableHeader() {
+            const thead = document.getElementById('tableHead');
+            const headerRow = '<tr>' +
+                fields.map(f => '<th>' + f.label + '</th>').join('') +
+                '<th>⚙️ عملیات</th>' +
+                '</tr>';
+            thead.innerHTML = headerRow;
+        }
+
+        function updateDataDisplay() {
+            const tbody = document.getElementById('tableBody');
+            const currentData = currentDataView === 'imported' ? importedData : manualData;
+            let filtered = currentData;
+
+            if (searchQuery.trim()) {
+                filtered = currentData.filter(record =>
+                    JSON.stringify(record).toLowerCase().includes(searchQuery.toLowerCase())
+                );
+            }
+
+            tbody.innerHTML = filtered.map((record, index) => {
+                const actualIndex = currentData.indexOf(record);
+                return '<tr>' +
+                    fields.map(f => '<td>' + (record[f.id] || '-') + '</td>').join('') +
+                    '<td><div class="action-buttons">' +
+                    '<button class="btn btn-primary btn-sm" onclick="openEditModal(' + actualIndex + ')">✏️</button>' +
+                    '<button class="btn btn-danger btn-sm" onclick="deleteRecord(' + actualIndex + ')">🗑️</button>' +
+                    '</div></td>' +
+                    '</tr>';
+            }).join('');
+
+            updateStats(filtered);
+        }
+
+        function updateStats(data) {
+            const statsContainer = document.getElementById('statsContainer');
+            const totalRecords = data.length;
+            const coldRecords = data.filter(r => r.type === 'سرد').length;
+            const hotRecords = data.filter(r => r.type === 'گرم').length;
+            const viewLabel = currentDataView === 'imported' ? 'بارگذاری شده' : 'ثبت شده';
+
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <h3>📊 کل رکورد‌ها (${viewLabel})</h3>
+                    <div class="value">${totalRecords}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>❄️ تعمیرات سرد</h3>
+                    <div class="value">${coldRecords}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>🔥 تعمیرات گرم</h3>
+                    <div class="value">${hotRecords}</div>
+                </div>
+            `;
+        }
+
+        document.getElementById('searchBox').addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            updateDataDisplay();
+        });
+
+        function openEditModal(index) {
+            editingIndex = index;
+            const currentData = currentDataView === 'imported' ? importedData : manualData;
+            const record = currentData[index];
+            const form = document.getElementById('editForm');
+
+            form.innerHTML = fields.map(f => {
+                const gridSpan = (f.id === 'description' || f.id === 'pmDate' || f.id === 'date') ? 'style="grid-column: 1 / -1;"' : '';
+                if (f.id === 'pmDate' || f.id === 'date') {
+                    const dateValue = record[f.id] || '';
+                    const dateParts = dateValue.split('/');
+                    let yearOptions = '<option value="">سال</option>';
+                    let monthOptions = '<option value="">ماه</option>';
+                    let dayOptions = '<option value="">روز</option>';
+                    const months = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+                    
+                    for (let i = 1400; i <= 1410; i++) {
+                        const selected = dateParts[0] == i ? 'selected' : '';
+                        yearOptions += '<option value="' + i + '" ' + selected + '>' + i + '</option>';
+                    }
+                    
+                    months.forEach((month, idx) => {
+                        const val = idx + 1;
+                        const selected = dateParts[1] == val ? 'selected' : '';
+                        monthOptions += '<option value="' + val + '" ' + selected + '>' + val.toString().padStart(2, '0') + ' - ' + month + '</option>';
+                    });
+                    
+                    for (let i = 1; i <= 31; i++) {
+                        const selected = dateParts[2] == i ? 'selected' : '';
+                        dayOptions += '<option value="' + i + '" ' + selected + '>' + i.toString().padStart(2, '0') + '</option>';
+                    }
+                    
+                    return '<div class="form-group" ' + gridSpan + '>' +
+                        '<label>' + f.label + '</label>' +
+                        '<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-8);">' +
+                        '<select id="edit_' + f.id + '_year" style="padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-surface); color: var(--color-text); font-size: 14px; height: var(--input-height);">' + yearOptions + '</select>' +
+                        '<select id="edit_' + f.id + '_month" style="padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-surface); color: var(--color-text); font-size: 14px; height: var(--input-height);">' + monthOptions + '</select>' +
+                        '<select id="edit_' + f.id + '_day" style="padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-surface); color: var(--color-text); font-size: 14px; height: var(--input-height);">' + dayOptions + '</select>' +
+                        '</div></div>';
+                } else if (f.id === 'lineName') {
+                    return '<div class="form-group">' +
+                        '<label>' + f.label + '</label>' +
+                        '<div style="position: relative;">' +
+                        '<input type="text" id="edit_' + f.id + '" value="' + (record[f.id] || '') + '" oninput="showEditSuggestions(\'edit_' + f.id + '\', \'editLineNameSuggestions\', lineNamesList)" style="width: 100%; padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-surface); color: var(--color-text); font-size: 14px; height: var(--input-height);">' +
+                        '<div id="editLineNameSuggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-base); max-height: 300px; overflow-y: auto; display: none; z-index: 100; box-shadow: var(--shadow-md);"></div>' +
+                        '</div></div>';
+                } else if (f.id === 'description') {
+                    return '<div class="form-group" ' + gridSpan + '>' +
+                        '<label>' + f.label + '</label>' +
+                        '<div style="position: relative;">' +
+                        '<textarea id="edit_' + f.id + '" oninput="showEditSuggestions(\'edit_' + f.id + '\', \'editDescriptionSuggestions\', descriptionList)" style="width: 100%; padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-surface); color: var(--color-text); font-size: 14px; font-family: var(--font-family-base, \'Tahoma\', \'Arial\', sans-serif); min-height: 100px; resize: vertical;">' + (record[f.id] || '') + '</textarea>' +
+                        '<div id="editDescriptionSuggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-base); max-height: 300px; overflow-y: auto; display: none; z-index: 100; box-shadow: var(--shadow-md);"></div>' +
+                        '</div></div>';
+                } else {
+                    return '<div class="form-group">' +
+                        '<label>' + f.label + '</label>' +
+                        '<input type="text" id="edit_' + f.id + '" value="' + (record[f.id] || '') + '" style="padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-surface); color: var(--color-text); font-size: 14px; height: var(--input-height); width: 100%;">' +
+                        '</div>';
+                }
+            }).join('');
+
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function showEditSuggestions(inputId, suggestionsId, list) {
+            const input = document.getElementById(inputId);
+            const suggestionsDiv = document.getElementById(suggestionsId);
+            const query = input.value.trim().toLowerCase();
+            
+            if (!query) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            
+            const filtered = list.filter(item => 
+                item.name.toLowerCase().includes(query) || 
+                item.display.toLowerCase().includes(query) || 
+                item.id.toString() === query
+            );
+            
+            if (filtered.length === 0) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            
+            const displayItems = filtered.slice(0, 15);
+            suggestionsDiv.innerHTML = displayItems.map(item => `
+                <div class="suggestion-item" onclick="selectEditSuggestion('${inputId}', '${item.name.replace(/'/g, "\\'")}')">${item.display}</div>
+            `).join('');
+            
+            suggestionsDiv.style.display = 'block';
+        }
+
+        function selectEditSuggestion(inputId, value) {
+            document.getElementById(inputId).value = value;
+            const suggestionsId = inputId === 'edit_lineName' ? 'editLineNameSuggestions' : 'editDescriptionSuggestions';
+            document.getElementById(suggestionsId).style.display = 'none';
+        }
+
+        function saveEdit() {
+            const currentData = currentDataView === 'imported' ? importedData : manualData;
+            const record = currentData[editingIndex];
+            
+            fields.forEach(f => {
+                if (f.id === 'pmDate' || f.id === 'date') {
+                    const year = document.getElementById('edit_' + f.id + '_year').value;
+                    const month = document.getElementById('edit_' + f.id + '_month').value;
+                    const day = document.getElementById('edit_' + f.id + '_day').value;
+                    record[f.id] = formatDate(year, month, day);
+                } else {
+                    record[f.id] = document.getElementById('edit_' + f.id).value;
+                }
+            });
+
+            saveDataToLocalStorage();
+            updateDataDisplay();
+            closeEditModal();
+            showMessage('addMessage', '✅ رکورد بروزرسانی و ذخیره شد!');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+            editingIndex = -1;
+        }
+
+        function deleteRecord(index) {
+            if (confirm('آیا از حذف این رکورد اطمینان دارید؟')) {
+                const currentData = currentDataView === 'imported' ? importedData : manualData;
+                currentData.splice(index, 1);
+                
+                saveDataToLocalStorage();
+                updateDataDisplay();
+                showMessage('addMessage', '✅ رکورد حذف و ذخیره شد!');
+            }
+        }
+
+        function exportToExcel() {
+            const allDataExport = [...manualData, ...importedData];
+            if (allDataExport.length === 0) {
+                alert('⚠️ هیچ داده‌ای برای دانلود وجود ندارد!');
+                return;
+            }
+
+            const headerRow = fields.map(f => f.label);
+            const dataRows = allDataExport.map(record => fields.map(f => record[f.id] || ''));
+            const wsData = [headerRow, ...dataRows];
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'تعمیرات');
+            XLSX.writeFile(wb, 'تعمیرات_' + new Date().toLocaleDateString('fa-IR').replace(/\//g, '-') + '.xlsx');
+
+            showMessage('addMessage', '✅ فایل اکسل دانلود شد!');
+        }
+
+        function exportImportedToExcel() {
+            if (importedData.length === 0) {
+                alert('⚠️ هیچ داده‌ای برای دانلود وجود ندارد!');
+                return;
+            }
+
+            const headerRow = fields.map(f => f.label);
+            const dataRows = importedData.map(record => fields.map(f => record[f.id] || ''));
+            const wsData = [headerRow, ...dataRows];
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'بارگذاری شده');
+            XLSX.writeFile(wb, 'تعمیرات_بارگذاری_' + new Date().toLocaleDateString('fa-IR').replace(/\//g, '-') + '.xlsx');
+
+            showMessage('addMessage', '✅ فایل اکسل دانلود شد!');
+        }
+
+        function exportManualToExcel() {
+            if (manualData.length === 0) {
+                alert('⚠️ هیچ داده‌ای برای دانلود وجود ندارد!');
+                return;
+            }
+
+            const headerRow = fields.map(f => f.label);
+            const dataRows = manualData.map(record => fields.map(f => record[f.id] || ''));
+            const wsData = [headerRow, ...dataRows];
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'ثبت شده');
+            XLSX.writeFile(wb, 'تعمیرات_ثبت_شده_' + new Date().toLocaleDateString('fa-IR').replace(/\//g, '-') + '.xlsx');
+
+            showMessage('addMessage', '✅ فایل اکسل دانلود شد!');
+        }
+
+        function setupUploadArea() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = 'var(--color-primary)';
+                uploadArea.style.backgroundColor = 'var(--color-bg-3)';
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.style.borderColor = 'var(--color-border)';
+                uploadArea.style.backgroundColor = 'transparent';
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = 'var(--color-border)';
+                uploadArea.style.backgroundColor = 'transparent';
+                handleFileUpload(e.dataTransfer.files[0]);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files[0]) {
+                    handleFileUpload(e.target.files[0]);
+                }
+            });
+        }
+
+        function handleFileUpload(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const importedRecords = [];
+
+                    workbook.SheetNames.forEach(sheetName => {
+                        const worksheet = workbook.Sheets[sheetName];
+                        const allRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+                        if (allRows.length <= 1) return;
+
+                        const dataRows = allRows.slice(1);
+                        dataRows.forEach(row => {
+                            if (!row || row.length === 0 || !row.some(cell => cell)) return;
+
+                            const record = {};
+                            fields.forEach((field, idx) => {
+                                record[field.id] = (row[idx] || '').toString().trim();
+                            });
+
+                            if (record.type || record.lineName) {
+                                importedRecords.push(record);
+                            }
+                        });
+                    });
+
+                    if (importedRecords.length > 0) {
+                        importedData = importedRecords;
+                        saveDataToLocalStorage();
+                        
+                        buildSuggestionLists();
+                        currentDataView = 'imported';
+                        document.querySelectorAll('#dataTab .tabs .tab').forEach((tab, idx) => {
+                            tab.classList.toggle('active', idx === 1);
+                        });
+                        updateTableHeader();
+                        updateDataDisplay();
+                        showMessage('importMessage', '✅ ' + importedRecords.length + ' رکورد بارگذاری و ذخیره شدند!');
+                    }
+                } catch (error) {
+                    showMessage('importMessage', '❌ خطا: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function clearAllData() {
+            if (confirm('⚠️ آیا از پاک کردن تمام داده‌ها اطمینان دارید؟')) {
+                importedData = [];
+                manualData = [];
+                saveDataToLocalStorage();
+                updateDataDisplay();
+                showMessage('addMessage', '✅ تمام داده‌ها پاک و ذخیره شدند!');
+            }
+        }
+
+        function testDataStorage() {
+            const data = localStorage.getItem('maintenanceData');
+            if (data) {
+                const parsed = JSON.parse(data);
+                alert(`✅ ذخیره‌سازی فعال است!\n\n📋 داده‌های ثبت شده: ${parsed.manualData.length} رکورد\n📥 داده‌های بارگذاری شده: ${parsed.importedData.length} رکورد\n\n🕐 آخرین ذخیره: ${parsed.lastSaved}`);
+                console.log('📊 تمام داده‌ها:', parsed);
+            } else {
+                alert('❌ هیچ داده‌ای ذخیره نشده است. ابتدا یک رکورد ثبت کنید!');
+            }
+        }
+
+        function downloadBackup() {
+            const data = localStorage.getItem('maintenanceData');
+            if (!data) {
+                alert('⚠️ هیچ داده‌ای برای دانلود وجود ندارد!');
+                return;
+            }
+
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/json;charset=utf-8,' + encodeURIComponent(data));
+            element.setAttribute('download', 'maintenance_backup_' + new Date().toLocaleDateString('fa-IR').replace(/\//g, '-') + '.json');
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+            showMessage('addMessage', '✅ نسخه‌پشتیبان دانلود شد!');
+        }
+
+        function uploadBackup() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.json';
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const backup = JSON.parse(event.target.result);
+                        importedData = backup.importedData || [];
+                        manualData = backup.manualData || [];
+                        saveDataToLocalStorage();
+                        buildSuggestionLists();
+                        updateDataDisplay();
+                        showMessage('addMessage', '✅ ' + (backup.manualData.length + backup.importedData.length) + ' رکورد بارگذاری شد!', 'success');
+                    } catch (error) {
+                        showMessage('addMessage', '❌ خطا: ' + error.message, 'error');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            fileInput.click();
+        }
+
+        function loadSettings() {
+            const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+            document.getElementById('headerTitle').value = settings.headerTitle || '🔧 سیستم مدیریت تعمیرات';
+            document.getElementById('headerSubtitle').value = settings.headerSubtitle || 'خودکار ذخیره‌سازی و مدیریت داده‌ها';
+            document.getElementById('fontFamily').value = settings.fontFamily || 'Tahoma, Arial, sans-serif';
+            document.getElementById('fontSize').value = settings.fontSize || 14;
+            document.getElementById('fontWeight').value = settings.fontWeight || '400';
+            document.getElementById('textColor').value = settings.textColor || '#134252';
+            document.getElementById('primaryColor').value = settings.primaryColor || '#218089';
+            document.getElementById('successColor').value = settings.successColor || '#22c55e';
+            document.getElementById('errorColor').value = settings.errorColor || '#c0152f';
+            document.getElementById('warningColor').value = settings.warningColor || '#a84b2f';
+            document.getElementById('bgColorStart').value = settings.bgColorStart || '#f0f8f0';
+            document.getElementById('bgColorMid').value = settings.bgColorMid || '#fff9e6';
+            document.getElementById('bgColorEnd').value = settings.bgColorEnd || '#f0f9ff';
+            document.getElementById('borderRadius').value = settings.borderRadius || 8;
+            document.getElementById('btnRadius').value = settings.btnRadius || 8;
+            document.getElementById('btnPadding').value = settings.btnPadding || 'normal';
+            document.getElementById('inputSize').value = settings.inputSize || 'normal';
+            document.getElementById('spacing').value = settings.spacing || 'normal';
+            document.getElementById('headerHeight').value = settings.headerHeight || 100;
+            document.getElementById('headerOpacity').value = settings.headerOpacity || 100;
+            document.getElementById('containerWidth').value = settings.containerWidth || 1600;
+            document.getElementById('formColumns').value = settings.formColumns || 'auto';
+            document.getElementById('headerImagePosition').value = settings.headerImagePosition || 'center';
+            document.getElementById('tabsPosition').value = settings.tabsPosition || 'top';
+            document.getElementById('headerButtonsLayout').value = settings.headerButtonsLayout || 'flex';
+            
+            if (settings.headerImageBase64) {
+                const img = document.getElementById('headerImagePreviewImg');
+                img.src = settings.headerImageBase64;
+                document.getElementById('headerImagePreview').style.display = 'block';
+            }
+            
+            updateFontSizeDisplay();
+            updateBorderRadiusDisplay();
+            updateBtnRadiusDisplay();
+            updateHeaderHeightDisplay();
+            updateHeaderOpacityDisplay();
+            updateContainerWidthDisplay();
+            applySettings();
+        }
+
+        function updateFontSizeDisplay() {
+            const fontSize = document.getElementById('fontSize').value;
+            document.getElementById('fontSizeDisplay').textContent = fontSize + 'px';
+        }
+
+        function updateBorderRadiusDisplay() {
+            const borderRadius = document.getElementById('borderRadius').value;
+            document.getElementById('borderRadiusDisplay').textContent = borderRadius + 'px';
+        }
+
+        function updateBtnRadiusDisplay() {
+            const btnRadius = document.getElementById('btnRadius').value;
+            document.getElementById('btnRadiusDisplay').textContent = btnRadius + 'px';
+        }
+
+        document.getElementById('fontSize').addEventListener('input', updateFontSizeDisplay);
+        document.getElementById('borderRadius').addEventListener('input', updateBorderRadiusDisplay);
+        document.getElementById('btnRadius').addEventListener('input', updateBtnRadiusDisplay);
+        document.getElementById('textColor').addEventListener('input', (e) => {
+            document.getElementById('textColorHex').value = e.target.value;
+        });
+        document.getElementById('primaryColor').addEventListener('input', (e) => {
+            document.getElementById('primaryColorHex').value = e.target.value;
+        });
+        document.getElementById('successColor').addEventListener('input', (e) => {
+            document.getElementById('successColorHex').value = e.target.value;
+        });
+        document.getElementById('errorColor').addEventListener('input', (e) => {
+            document.getElementById('errorColorHex').value = e.target.value;
+        });
+        document.getElementById('warningColor').addEventListener('input', (e) => {
+            document.getElementById('warningColorHex').value = e.target.value;
+        });
+
+        function previewImage(inputId, previewId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            const previewImg = document.getElementById(previewId + 'Img');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImg.src = e.target.result;
+                    preview.style.display = 'block';
+                    applySettings();
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function applySettings() {
+            const fontFamily = document.getElementById('fontFamily').value;
+            const fontSize = document.getElementById('fontSize').value;
+            const fontWeight = document.getElementById('fontWeight').value;
+            const textColor = document.getElementById('textColor').value;
+            const primaryColor = document.getElementById('primaryColor').value;
+            const successColor = document.getElementById('successColor').value;
+            const errorColor = document.getElementById('errorColor').value;
+            const warningColor = document.getElementById('warningColor').value;
+            const bgColorStart = document.getElementById('bgColorStart').value;
+            const bgColorMid = document.getElementById('bgColorMid').value;
+            const bgColorEnd = document.getElementById('bgColorEnd').value;
+            const borderRadius = document.getElementById('borderRadius').value;
+            const btnRadius = document.getElementById('btnRadius').value;
+            const spacing = document.getElementById('spacing').value;
+            const btnPadding = document.getElementById('btnPadding').value;
+            const inputSize = document.getElementById('inputSize').value;
+            const headerHeight = document.getElementById('headerHeight').value;
+            const headerOpacity = document.getElementById('headerOpacity').value;
+            const containerWidth = document.getElementById('containerWidth').value;
+            const formColumns = document.getElementById('formColumns').value;
+            const headerImagePosition = document.getElementById('headerImagePosition').value;
+            const tabsPosition = document.getElementById('tabsPosition').value;
+
+            const root = document.documentElement.style;
+            root.setProperty('--font-family-base', fontFamily);
+            root.setProperty('--font-size-base', fontSize + 'px');
+            root.setProperty('--font-weight', fontWeight);
+            root.setProperty('--color-text', textColor);
+            root.setProperty('--color-primary', primaryColor);
+            root.setProperty('--color-success', successColor);
+            root.setProperty('--color-error', errorColor);
+            root.setProperty('--color-warning', warningColor);
+            root.setProperty('--radius-base', borderRadius + 'px');
+            root.setProperty('--radius-lg', (parseInt(borderRadius) + 4) + 'px');
+            root.setProperty('--btn-radius', btnRadius + 'px');
+
+            document.body.style.background = `linear-gradient(135deg, ${bgColorStart} 0%, ${bgColorMid} 50%, ${bgColorEnd} 100%)`;
+
+            const header = document.querySelector('.header');
+            if (header) {
+                header.style.minHeight = headerHeight + 'px';
+                const headerImg = document.getElementById('headerImagePreviewImg');
+                if (headerImg && headerImg.src) {
+                    header.style.backgroundImage = `url('${headerImg.src}')`;
+                    header.style.backgroundPosition = headerImagePosition;
+                    header.style.backgroundSize = 'cover';
+                    header.style.backgroundAttachment = 'fixed';
+                    header.style.opacity = headerOpacity / 100;
+                }
+            }
+
+            const tabs = document.querySelector('.tabs');
+            if (tabs) {
+                tabs.style.order = tabsPosition === 'bottom' ? '1' : '-1';
+            }
+
+            const container = document.querySelector('.container');
+            if (container) {
+                container.style.maxWidth = containerWidth + 'px';
+            }
+
+            const formGrid = document.querySelector('.form-grid');
+            if (formGrid) {
+                if (formColumns === 'auto') {
+                    formGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))';
+                } else {
+                    formGrid.style.gridTemplateColumns = `repeat(${formColumns}, 1fr)`;
+                }
+            }
+
+            const headerButtons = document.querySelector('.header-buttons');
+            if (headerButtons) {
+                headerButtons.style.flexDirection = document.getElementById('headerButtonsLayout').value === 'flex-col' ? 'column' : 'row';
+                headerButtons.style.flexWrap = document.getElementById('headerButtonsLayout').value === 'flex-wrap' ? 'wrap' : 'nowrap';
+            }
+
+            let btnPaddingValue = '10px 20px';
+            if (btnPadding === 'compact') btnPaddingValue = '6px 12px';
+            if (btnPadding === 'spacious') btnPaddingValue = '14px 28px';
+            root.setProperty('--btn-padding', btnPaddingValue);
+
+            let inputHeightValue = '40px';
+            if (inputSize === 'compact') inputHeightValue = '36px';
+            if (inputSize === 'large') inputHeightValue = '48px';
+            root.setProperty('--input-height', inputHeightValue);
+
+            let spacingMultiplier = 1;
+            if (spacing === 'compact') spacingMultiplier = 0.75;
+            if (spacing === 'spacious') spacingMultiplier = 1.25;
+
+            root.setProperty('--space-8', (8 * spacingMultiplier) + 'px');
+            root.setProperty('--space-12', (12 * spacingMultiplier) + 'px');
+            root.setProperty('--space-16', (16 * spacingMultiplier) + 'px');
+            root.setProperty('--space-20', (20 * spacingMultiplier) + 'px');
+            root.setProperty('--space-24', (24 * spacingMultiplier) + 'px');
+            root.setProperty('--space-28', (28 * spacingMultiplier) + 'px');
+            root.setProperty('--space-32', (32 * spacingMultiplier) + 'px');
+        }
+
+        document.getElementById('headerButtonsLayout')?.addEventListener('change', applySettings);
+
+        function updateHeaderHeightDisplay() {
+            const headerHeight = document.getElementById('headerHeight').value;
+            document.getElementById('headerHeightDisplay').textContent = headerHeight + 'px';
+        }
+
+        function updateHeaderOpacityDisplay() {
+            const headerOpacity = document.getElementById('headerOpacity').value;
+            document.getElementById('headerOpacityDisplay').textContent = headerOpacity + '%';
+        }
+
+        function updateContainerWidthDisplay() {
+            const containerWidth = document.getElementById('containerWidth').value;
+            document.getElementById('containerWidthDisplay').textContent = containerWidth + 'px';
+        }
+
+        document.getElementById('headerHeight')?.addEventListener('input', updateHeaderHeightDisplay);
+        document.getElementById('headerOpacity')?.addEventListener('input', updateHeaderOpacityDisplay);
+        document.getElementById('containerWidth')?.addEventListener('input', updateContainerWidthDisplay);
+
+        function saveSettings() {
+            const settings = {
+                headerTitle: document.getElementById('headerTitle').value,
+                headerSubtitle: document.getElementById('headerSubtitle').value,
+                fontFamily: document.getElementById('fontFamily').value,
+                fontSize: document.getElementById('fontSize').value,
+                fontWeight: document.getElementById('fontWeight').value,
+                textColor: document.getElementById('textColor').value,
+                primaryColor: document.getElementById('primaryColor').value,
+                successColor: document.getElementById('successColor').value,
+                errorColor: document.getElementById('errorColor').value,
+                warningColor: document.getElementById('warningColor').value,
+                bgColorStart: document.getElementById('bgColorStart').value,
+                bgColorMid: document.getElementById('bgColorMid').value,
+                bgColorEnd: document.getElementById('bgColorEnd').value,
+                borderRadius: document.getElementById('borderRadius').value,
+                btnRadius: document.getElementById('btnRadius').value,
+                btnPadding: document.getElementById('btnPadding').value,
+                inputSize: document.getElementById('inputSize').value,
+                spacing: document.getElementById('spacing').value,
+                headerHeight: document.getElementById('headerHeight').value,
+                headerOpacity: document.getElementById('headerOpacity').value,
+                containerWidth: document.getElementById('containerWidth').value,
+                formColumns: document.getElementById('formColumns').value,
+                headerImagePosition: document.getElementById('headerImagePosition').value,
+                tabsPosition: document.getElementById('tabsPosition').value,
+                headerButtonsLayout: document.getElementById('headerButtonsLayout').value
+            };
+
+            const headerImg = document.getElementById('headerImagePreviewImg');
+            if (headerImg && headerImg.src) {
+                settings.headerImageBase64 = headerImg.src;
+            }
+
+            localStorage.setItem('appSettings', JSON.stringify(settings));
+            showMessage('settingsMessage', '✅ تنظیمات ذخیره شدند!', 'success');
+        }
+
+        function resetSettings() {
+            localStorage.removeItem('appSettings');
+            location.reload();
+            showMessage('settingsMessage', '✅ تنظیمات بازگرداندن شدند!', 'success');
+        }
+
+        function exportSettings() {
+            const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(settings, null, 2)));
+            element.setAttribute('download', 'app_settings_' + new Date().toLocaleDateString('fa-IR').replace(/\//g, '-') + '.json');
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+            showMessage('settingsMessage', '✅ تنظیمات دانلود شد!', 'success');
+        }
+
+        function importSettingsFile() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.json';
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const settings = JSON.parse(event.target.result);
+                        localStorage.setItem('appSettings', JSON.stringify(settings));
+                        loadSettings();
+                        showMessage('settingsMessage', '✅ تنظیمات بارگذاری شد!', 'success');
+                    } catch (error) {
+                        showMessage('settingsMessage', '❌ خطا: ' + error.message, 'error');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            fileInput.click();
+        }
+
+        function previewSettings() {
+            showMessage('settingsMessage', '👁️ تغییرات فوری اعمال می‌شوند', 'success');
+        }
+
+        window.addEventListener('load', () => {
+            loadSettings();
+        });
+    </script>
+</body>
+</html>

@@ -165,6 +165,16 @@
         .status-indicator.offline { background-color: rgba(192, 21, 47, 0.2); color: var(--color-error); }
         .settings-section { background: #f9fafb; padding: var(--space-20); border-radius: var(--radius-lg); margin-bottom: var(--space-20); border: 1px solid var(--color-border); }
         .settings-section h3 { margin-bottom: var(--space-16); color: var(--color-text); font-size: 16px; }
+        .tower-count-badge { 
+            display: inline-block; 
+            background: var(--color-primary); 
+            color: white; 
+            padding: 4px 12px; 
+            border-radius: 12px; 
+            font-size: 12px; 
+            font-weight: 600; 
+            margin-right: 8px;
+        }
         @media (max-width: 768px) {
             .header { flex-direction: column; gap: var(--space-16); }
             .header-buttons { width: 100%; flex-direction: column; }
@@ -252,8 +262,12 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>🏗️ شماره دکل *</label>
-                            <input type="text" id="addTowerNumber" required placeholder="مثال: 2">
+                            <label>
+                                🏗️ شماره دکل *
+                                <span id="towerCountDisplay" class="tower-count-badge" style="display: none;">0 دکل</span>
+                            </label>
+                            <input type="text" id="addTowerNumber" required placeholder="مثال: 2-5-8-12" oninput="updateTowerCount()" style="direction: ltr; text-align: left;">
+                            <small style="color: var(--color-text-secondary); font-size: 12px; margin-top: 4px;">شماره دکل‌ها را با - از هم جدا کنید</small>
                         </div>
                         <div class="form-group">
                             <label>📅 تاریخ ثبت گزارش</label>
@@ -627,10 +641,40 @@
             { id: 'pmDate', label: 'تاریخ ثبت گزارش' },
             { id: 'date', label: 'تاریخ انجام', required: true },
             { id: 'teams', label: 'تعداد اکیپ' },
-            { id: 'workers', label: 'تعداد نفرات' },                    { id: 'supervisor', label: 'نام سرپرست اکیپ' },
-                    { id: 'quantity', label: 'مقدار' },
-                    { id: 'unit', label: 'واحد' }
+            { id: 'workers', label: 'تعداد نفرات' },
+            { id: 'supervisor', label: 'نام سرپرست اکیپ' },
+            { id: 'quantity', label: 'مقدار' },
+            { id: 'unit', label: 'واحد' }
         ];
+
+        // تابع جدید برای شمارش تعداد دکل‌ها
+        function updateTowerCount() {
+            const input = document.getElementById('addTowerNumber');
+            const badge = document.getElementById('towerCountDisplay');
+            
+            if (!input || !badge) return;
+            
+            const value = input.value.trim();
+            
+            if (!value) {
+                badge.style.display = 'none';
+                return;
+            }
+            
+            // جداسازی با - و حذف فاصله‌ها
+            const towers = value.split('-')
+                .map(t => t.trim())
+                .filter(t => t.length > 0);
+            
+            const count = towers.length;
+            
+            if (count > 0) {
+                badge.textContent = count + ' دکل';
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             openIndexedDB().then(() => {
@@ -677,7 +721,6 @@
             const monthSelect = document.getElementById('addDateMonth');
             const daySelect = document.getElementById('addDateDay');
             
-            // پاک کردن گزینه‌های قدیمی (اگر موجود باشند)
             yearSelect.innerHTML = '<option value="">سال</option>';
             monthSelect.innerHTML = '<option value="">ماه</option>';
             daySelect.innerHTML = '<option value="">روز</option>';
@@ -710,16 +753,13 @@
             const persianDate = today.toLocaleDateString('fa-IR');
             const parts = persianDate.split('/');
             
-            // تبدیل صحیح تاریخ میلادی به شمسی
             let year, month, day;
             
             if (parts[0].length === 4) {
-                // فرمت YYYY/MM/DD
                 year = parseInt(parts[0]);
                 month = parseInt(parts[1]);
                 day = parseInt(parts[2]);
             } else if (parts[2].length === 4) {
-                // فرمت DD/MM/YYYY
                 year = parseInt(parts[2]);
                 month = parseInt(parts[1]);
                 day = parseInt(parts[0]);
@@ -729,13 +769,11 @@
                 day = 6;
             }
             
-            // تنظیم dropdown تاریخ انجام
             document.getElementById('addDateYear').value = year;
             document.getElementById('addDateMonth').value = month;
             document.getElementById('addDateDay').value = day;
             document.getElementById('todayDateDisplay').textContent = `${year}/${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}`;
             
-            // تاریخ ثبت گزارش (تاریخ PM) - پیش‌فرض تاریخ امروز
             setTodayPMDate();
         }
 
@@ -761,7 +799,6 @@
         }
 
         function loadDataFromLocalStorage() {
-            // ابتدا از IndexedDB سعی می‌کنیم
             openIndexedDB().then(() => {
                 getAllData().then(data => {
                     if (data && data.length > 0) {
@@ -771,7 +808,6 @@
                         return;
                     }
                     
-                    // اگر IndexedDB خالی بود، از localStorage بارگذاری کنید
                     const savedData = localStorage.getItem('maintenanceData');
                     if (savedData) {
                         try {
@@ -779,7 +815,6 @@
                             importedData = jsonData.importedData || [];
                             manualData = jsonData.manualData || [];
                             
-                            // اطلاعات را به IndexedDB منتقل کنید
                             saveAllData();
                         } catch (error) {
                             console.log('خطا در بارگذاری:', error);
@@ -832,10 +867,8 @@
                 const transaction = db.transaction(['records'], 'readwrite');
                 const store = transaction.objectStore('records');
                 
-                // پاک کردن داده های قدیمی
                 store.clear();
                 
-                // ذخیره سازی داده های جدید
                 manualData.forEach(record => {
                     store.add({
                         record: record,
@@ -854,7 +887,6 @@
                 
                 return new Promise((resolve) => {
                     transaction.oncomplete = () => {
-                        // همچنین در localStorage ذخیره کنید (نسخه پشتیبان)
                         const dataToSave = {
                             importedData: importedData,
                             manualData: manualData,
@@ -942,7 +974,6 @@
             supervisorList = Array.from(supervisors.values());
             unitsList = Array.from(units.values());
             
-            // بروزرسانی دراپ‌داون‌ها
             updateSupervisorDropdown();
             updateUnitsDropdown();
         }
@@ -1064,7 +1095,6 @@
                 unit: document.getElementById('addUnit').value
             };
 
-            // بررسی تکراری بودن رکورد
             const isDuplicate = [...manualData, ...importedData].some(record => 
                 JSON.stringify(record) === JSON.stringify(newRecord)
             );
@@ -1085,8 +1115,6 @@
             
             showMessage('addMessage', '✅ رکورد ثبت و ذخیره شد!');
             showSuccessPopup();
-            
-            // هیچ فیلدی پاک نمی‌شود - همه چیز ثابت می‌مانند
         });
 
         function showSuccessPopup() {
@@ -1263,7 +1291,7 @@
                 } else {
                     return '<div class="form-group">' +
                         '<label>' + f.label + '</label>' +
-                        '<input type="text" id="edit_' + f.id + '" value="' + (record[f.id] || '') + '" style="padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-surface); color: var(--color-text); font-size: 14px; height: var(--input-height); width: 100%;">' +
+                        '<input type="text" id="edit_' + f.id + '" value="' + (record[f.id] || '') + '" style="padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-surface); color: var(--color-text); font-size: 14px; height: var(--input-height); width: 100%;' + (f.id === 'towerNumber' ? ' direction: ltr; text-align: left;' : '') + '">' +
                         '</div>';
                 }
             }).join('');

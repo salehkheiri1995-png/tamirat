@@ -143,8 +143,11 @@
             font-size: 13px;
             white-space: normal;
             word-break: break-word;
+            height: auto;
+            min-height: 44px;
         }
         table tr:hover { background-color: rgba(33, 128, 141, 0.08); }
+        table tr { height: auto; }
         .action-buttons { display: flex; gap: var(--space-8); flex-wrap: wrap; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto; }
         .modal.active { display: flex; }
@@ -268,13 +271,13 @@
                                 <option value="شهری">شهری</option>
                             </select>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="grid-column: 1 / -1;">
                             <label>
                                 🏗️ شماره دکل *
                                 <span id="towerCountDisplay" class="tower-count-badge" style="display: none;">0 دکل</span>
                             </label>
-                            <input type="text" id="addTowerNumber" required placeholder="مثال: 2-5-8-12" oninput="updateTowerCount()" style="direction: ltr; text-align: left;">
-                            <small style="color: var(--color-text-secondary); font-size: 12px; margin-top: 4px;">شماره دکل‌ها را با - از هم جدا کنید</small>
+                            <textarea id="addTowerNumber" required placeholder="مثال: 2-5-8-12&#10;یا هر دکلی را در یک خط بنویسید" oninput="updateTowerCount()" style="direction: ltr; text-align: left; width: 100%; padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-background); color: var(--color-text); font-size: var(--font-size-base, 14px); font-family: var(--font-family-base, 'Tahoma', 'Arial', sans-serif); min-height: 120px; resize: vertical;"></textarea>
+                            <small style="color: var(--color-text-secondary); font-size: 12px; margin-top: 4px; display: block;">شماره دکل‌ها را با - جدا کنید (مثل: 2-5-8-12) یا هر دکل را در یک خط جداگانه بنویسید</small>
                         </div>
                         <div class="form-group">
                             <label>📅 تاریخ ثبت گزارش</label>
@@ -658,23 +661,35 @@
         function updateTowerCount() {
             const input = document.getElementById('addTowerNumber');
             const badge = document.getElementById('towerCountDisplay');
-            
+
             if (!input || !badge) return;
-            
+
             const value = input.value.trim();
-            
+
             if (!value) {
                 badge.style.display = 'none';
                 return;
             }
-            
-            // جداسازی با - و حذف فاصله‌ها
-            const towers = value.split('-')
-                .map(t => t.trim())
-                .filter(t => t.length > 0);
-            
+
+            // تقسیم بر خط‌های جدید و سپس بر -
+            let towers = [];
+
+            // هر خط را جدا کن
+            const lines = value.split('\n');
+
+            lines.forEach(line => {
+                // هر خطی را بر - جدا کن
+                const items = line.split('-');
+                items.forEach(item => {
+                    const trimmed = item.trim();
+                    if (trimmed.length > 0) {
+                        towers.push(trimmed);
+                    }
+                });
+            });
+
             const count = towers.length;
-            
+
             if (count > 0) {
                 badge.textContent = count + ' دکل';
                 badge.style.display = 'inline-block';
@@ -1209,10 +1224,19 @@
                         const value = (record[f.id] || '').toString().trim();
                         if (!value) return '<td>-</td>';
 
-                        const towers = value
-                            .split('-')
-                            .map(t => t.trim())
-                            .filter(t => t.length > 0);
+                        // تقسیم بر خط‌های جدید و سپس بر -
+                        let towers = [];
+                        const lines = value.split('\n');
+
+                        lines.forEach(line => {
+                            const items = line.split('-');
+                            items.forEach(item => {
+                                const trimmed = item.trim();
+                                if (trimmed.length > 0) {
+                                    towers.push(trimmed);
+                                }
+                            });
+                        });
 
                         if (towers.length === 0) return '<td>-</td>';
 
@@ -1220,7 +1244,7 @@
                             `<div style="white-space: nowrap; padding: 1px 0; border-bottom: 1px solid var(--color-border); font-size: 12px;">${t}</div>`
                         ).join('');
 
-                        return `<td style="vertical-align: top; line-height: 1.3; max-width: 180px;">${towerHtml}</td>`;
+                        return `<td style="vertical-align: top; line-height: 1.3; min-width: 120px; max-width: 300px; max-height: 180px; overflow-y: auto;"><div style="display: flex; flex-direction: column; gap: 2px;">${towerHtml}</div></td>`;
                     }
 
                     return '<td>' + (record[f.id] || '-') + '</td>';
@@ -1305,6 +1329,12 @@
                         '<select id="edit_' + f.id + '_month" style="padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-surface); color: var(--color-text); font-size: 14px; height: var(--input-height);">' + monthOptions + '</select>' +
                         '<select id="edit_' + f.id + '_day" style="padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-surface); color: var(--color-text); font-size: 14px; height: var(--input-height);">' + dayOptions + '</select>' +
                         '</div></div>';
+                } else if (f.id === 'towerNumber') {
+                    return '<div class="form-group" style="grid-column: 1 / -1;">' +
+                        '<label>' + f.label + '</label>' +
+                        '<textarea id="edit_' + f.id + '" style="width: 100%; padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-surface); color: var(--color-text); font-size: 14px; font-family: var(--font-family-base, \'Tahoma\', \'Arial\', sans-serif); min-height: 100px; resize: vertical; direction: ltr; text-align: left;">' + (record[f.id] || '') + '</textarea>' +
+                        '<small style="color: var(--color-text-secondary); font-size: 12px; margin-top: 4px; display: block;">شماره دکل‌ها را با - جدا کنید یا هر دکل را در یک خط جداگانه بنویسید</small>' +
+                        '</div>';
                 } else if (f.id === 'lineName') {
                     return '<div class="form-group">' +
                         '<label>' + f.label + '</label>' +
@@ -1322,7 +1352,7 @@
                 } else {
                     return '<div class="form-group">' +
                         '<label>' + f.label + '</label>' +
-                        '<input type="text" id="edit_' + f.id + '" value="' + (record[f.id] || '') + '" style="padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-surface); color: var(--color-text); font-size: 14px; height: var(--input-height); width: 100%;' + (f.id === 'towerNumber' ? ' direction: ltr; text-align: left;' : '') + '">' +
+                        '<input type="text" id="edit_' + f.id + '" value="' + (record[f.id] || '') + '" style="padding: var(--input-padding); border: 1.5px solid var(--color-border); border-radius: var(--radius-base); background-color: var(--color-surface); color: var(--color-text); font-size: 14px; height: var(--input-height); width: 100%;">' +
                         '</div>';
                 }
             }).join('');
